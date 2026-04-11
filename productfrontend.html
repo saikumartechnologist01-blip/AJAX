@@ -1,0 +1,205 @@
+<html>
+<head>
+    <title>Product Manager</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f6f8;
+            padding: 20px;
+        }
+
+        h2 {
+            text-align: center;
+            color: #333;
+        }
+
+        .form-container {
+            width: 40%;
+            margin: 20px auto;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        input {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        button {
+            width: 100%;
+            padding: 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        table {
+            width: 60%;
+            margin: 20px auto;
+            border-collapse: collapse;
+            background-color: #fff;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: center;
+        }
+
+        th {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+
+        tr:hover {
+            background-color: #ddd;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h2>Product Manager</h2>
+
+    <!-- Form -->
+    <div class="form-container">
+        <input type="text" id="name" placeholder="Enter product name" />
+        <input type="number" id="price" placeholder="Enter price" />
+        <button id="toggleBtn" onclick="addProduct()">Add Product</button>
+    </div>
+
+    <!-- Table -->
+    <table id="productTable">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Price</th>
+                 <th>Edit / Delete</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+    <script>
+        async function fetchProducts() {
+        const response =  await  fetch("http://localhost:3000/products");
+         const products = await response.json();
+               
+               
+                    const tableBody = document.querySelector("#productTable tbody");
+                    tableBody.innerHTML = "";
+
+                    products.forEach(product => {
+                        const row = document.createElement("tr");
+
+                        row.innerHTML = `
+                            <td style="font-weight: bold;">${product.id}</td>
+                            <td>${product.name}</td>
+                            <td style="color: green;">₹${product.price}</td>
+                            <td>
+                                <button onclick="editProduct(${product.id})" style="background-color: #2196F3; margin-right: 5px;">Edit</button>
+                                <button onclick="deleteProduct(${product.id})" style="background-color: #f44336;">Delete</button>
+                            </td>
+
+                        `;
+
+                        tableBody.appendChild(row);
+                    });
+                }
+        
+
+
+        async  function editProduct(id){
+              document.getElementById("toggleBtn").textContent = "Update Product";
+
+              const response = await fetch("http://localhost:3000/products/" + id)
+              const product = await response.json();
+              document.getElementById("name").value = product.name;
+              document.getElementById("price").value = product.price;
+            
+              document.getElementById("toggleBtn").onclick = async function() {
+                       
+                       var updatedName =  document.getElementById("name").value;
+                       var updatedPrice = document.getElementById("price").value;
+
+                     const response = await fetch("http://localhost:3000/products/" + id, {
+                            method: "PUT",
+                            headers: {
+                                "Content-Type": "application/json"
+                            },
+                            body: JSON.stringify({ name: updatedName, price: updatedPrice })
+                        });
+
+                       const finalResponse = await response.json();
+                            console.log("Product updated successfully:", finalResponse);
+                            fetchProducts();
+                            document.getElementById("name").value = "";
+                            document.getElementById("price").value = "";
+                            document.getElementById("toggleBtn").textContent = "Add Product";
+                            document.getElementById("toggleBtn").onclick = addProduct;
+                       
+
+                    }
+
+              
+          }
+
+
+        async function deleteProduct(id){
+            console.log("Deleting product with ID:", id);
+            const response = await fetch(`http://localhost:3000/products/${id}`, {
+                method: "DELETE"
+            });
+            if (response.ok) {
+                console.log(`Product with ID ${id} deleted successfully.`);
+                    fetchProducts();
+                } else {
+                    console.error(`Failed to delete product with ID ${id}. Status: ${response.status}`);
+                }
+         }
+
+
+       async function addProduct() {
+            const name = document.getElementById("name").value;
+            const price = document.getElementById("price").value;
+
+            if (name && price) {
+                const response = await fetch("http://localhost:3000/products", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({ name, price })
+                });
+                const product = await response.json();
+                    fetchProducts();
+                    document.getElementById("name").value = "";
+                    document.getElementById("price").value = "";
+            } else {
+                alert("Please enter both name and price.");
+            }
+        }
+     
+        // Load products on page load
+        fetchProducts();
+    </script>
+
+</body>
+</html>
